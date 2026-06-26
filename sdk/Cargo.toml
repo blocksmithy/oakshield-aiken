@@ -1,0 +1,8 @@
+[package]
+name = "oakshield-sdk"
+version = "0.2.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Off-chain codec for the oakshield Cardano Groth16/RISC0 wire format (vk/proof/public.cardano.bin)."
+
+[dependencies]

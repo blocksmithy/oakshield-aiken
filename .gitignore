@@ -1,0 +1,20 @@
+# Aiken build artifacts
+/build/
+/plutus.json
+/docs/
+
+# Rust build artifacts (sdk/)
+target/
+/sdk/Cargo.lock
+
+# OS / editor
+*.log
+.DS_Store
+*.swp
+*.swo
+
+/.claude
+
+# Archived, out-of-library code (emulated-BN254 / bls-snark 20-limb path).
+# Kept locally for reference; not part of the published library or build.
+/attic/

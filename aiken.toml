@@ -1,0 +1,23 @@
+name = "blocksmithy/oakshield-aiken"
+version = "0.2.0"
+compiler = "v1.1.22"
+plutus = "v3"
+license = "MIT OR Apache-2.0"
+description = "Aiken primitives for verifying zero-knowledge (Groth16 over BLS12-381) and Merkle proofs on Cardano, including on-chain verification of Mithril transaction-inclusion proofs."
+
+[repository]
+user = "blocksmithy"
+project = "oakshield-aiken"
+platform = "github"
+
+[[dependencies]]
+name = "aiken-lang/stdlib"
+version = "v3"
+source = "github"
+
+[[dependencies]]
+name = "aiken-lang/merkle-patricia-forestry"
+version = "2.1.0"
+source = "github"
+
+[config]
