@@ -3,8 +3,9 @@
 //// These datum types mirror the on-chain state of the `groth16-wrap-cardano`
 //// tip registry, so any contract can read its certified
 //// `CardanoTransactionsMerkleRoot` as a reference input — the current tip
-//// (held by a `singleton` NFT) or any archived tip (held by a per-tip NFT
-//// whose asset name is the tip's `tip_hash`).
+//// (held by a marker NFT whose asset name the deployment chooses) or any
+//// archived tip (held by a per-tip NFT whose asset name is the tip's
+//// `tip_hash`).
 ////
 //// The datum layouts must stay byte-identical to the registry that produces
 //// them; treat them as a shared on-chain ABI.
@@ -12,9 +13,6 @@
 use cardano/assets.{AssetName, PolicyId}
 use cardano/registry
 use cardano/transaction.{InlineDatum, Transaction}
-
-/// Asset name of the singleton NFT marking the current-tip UTxO.
-pub const singleton_name: AssetName = "singleton"
 
 /// Per-tip data extracted from a verified chain proof. Held by the singleton
 /// while current, copied verbatim into a historical UTxO once superseded.
@@ -51,18 +49,20 @@ pub type HistoricalDatum {
 
 /// Which certified root to read.
 pub type RootSource {
-  /// The current tip (singleton NFT UTxO).
+  /// The current tip (the marker-NFT UTxO named by `tip_name`).
   FromTip
   /// An archived tip, identified by its `tip_hash` (= per-tip NFT name).
   FromHistory { tip_hash: ByteArray }
 }
 
 /// Read the full certified [TipData](#TipData) from the chosen registry
-/// reference input — current tip (singleton NFT) or an archived tip (per-tip
-/// NFT named by its `tip_hash`). Gives access to `block_number` / `tip_hash` /
-/// `genesis_hash` for freshness or provenance checks, not just the root. Fails
-/// if the reference input is missing/ambiguous, the datum is the wrong shape,
-/// or (history) the named tip does not match its datum.
+/// reference input — the current tip (the marker NFT named `tip_name`) or an
+/// archived tip (the per-tip NFT named by its `tip_hash`). The library does not
+/// dictate the current-tip NFT's name; the deployment passes it in. Gives access
+/// to `block_number` / `tip_hash` / `genesis_hash` for freshness or provenance
+/// checks, not just the root. Fails if the reference input is missing/ambiguous,
+/// the datum is the wrong shape, or (history) the named tip does not match its
+/// datum.
 ///
 /// To require a recent root, compare `tip.block_number` or `mint_time_ms`
 /// against the transaction's validity range (e.g. assert `mint_time_ms` is
@@ -70,11 +70,12 @@ pub type RootSource {
 pub fn read_tip(
   self: Transaction,
   policy_id: PolicyId,
+  tip_name: AssetName,
   source: RootSource,
 ) -> TipData {
   when source is {
     FromTip -> {
-      let input = registry.reference_input_with_nft(self, policy_id, singleton_name)
+      let input = registry.reference_input_with_nft(self, policy_id, tip_name)
       expect InlineDatum(inner) = input.output.datum
       expect datum: SingletonDatum = inner
       expect Some(tip) = datum.current_tip
@@ -92,11 +93,13 @@ pub fn read_tip(
 }
 
 /// The certified `tx_merkle_root` of the chosen tip — a convenience over
-/// [read_tip](#read_tip) for the common case.
+/// [read_tip](#read_tip) for the common case. `tip_name` is the current-tip
+/// marker NFT's asset name (ignored for `FromHistory`, which keys on `tip_hash`).
 pub fn read_certified_root(
   self: Transaction,
   policy_id: PolicyId,
+  tip_name: AssetName,
   source: RootSource,
 ) -> ByteArray {
-  read_tip(self, policy_id, source).tx_merkle_root
+  read_tip(self, policy_id, tip_name, source).tx_merkle_root
 }

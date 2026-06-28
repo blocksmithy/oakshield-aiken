@@ -1,5 +1,5 @@
 name = "blocksmithy/oakshield-aiken"
-version = "0.2.0"
+version = "0.2.1"
 compiler = "v1.1.22"
 plutus = "v3"
 license = "MIT OR Apache-2.0"

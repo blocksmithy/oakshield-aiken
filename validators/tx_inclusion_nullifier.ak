@@ -48,6 +48,7 @@ validator tx_inclusion_nullifier(
   vk: VerificationKey,
   params: Risc0Params,
   registry_policy: PolicyId,
+  tip_name: AssetName,
   set_policy: PolicyId,
   set_name: AssetName,
 ) {
@@ -59,7 +60,7 @@ validator tx_inclusion_nullifier(
   ) {
     expect Some(SetDatum { root }) = datum
     let certified_root =
-      tip.read_certified_root(self, registry_policy, redeemer.source)
+      tip.read_certified_root(self, registry_policy, tip_name, redeemer.source)
 
     // Verify the proof, bind its root, and nullify the requested txs (each must
     // be committed; each insert aborts on replay).

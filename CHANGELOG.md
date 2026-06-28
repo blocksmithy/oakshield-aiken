@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.1
+
+Fix: the `mithril/tip` reader no longer dictates the current-tip NFT's asset
+name. A library must not force its naming onto a deployment; the name is now a
+caller parameter, matching how `set_name` / `y_name` are already parameterized.
+
+This changes the `read_tip` / `read_certified_root` signatures and the two
+tip-consuming validators' parameters — update callsites (see Migration).
+
+### Migration
+
+- `read_tip(self, policy, source)` → `read_tip(self, policy, tip_name, source)`
+  (same for `read_certified_root`); pass your deployment's current-tip NFT name.
+  `FromHistory` is unaffected (it keys on `tip_hash`).
+- `validators/tx_inclusion` and `validators/tx_inclusion_nullifier` gain a
+  `tip_name: AssetName` parameter, after `registry_policy`. A deployment that
+  relied on the old hardcoded `"singleton"` passes it explicitly, or picks a
+  clearer name. The `singleton_name` constant was removed.
+
 ## 0.2.0
 
 Refocused the library on native `risc0-groth16-bls` proofs (five BLS12-381
