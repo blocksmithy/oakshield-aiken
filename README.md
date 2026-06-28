@@ -25,7 +25,7 @@ directly over BLS12-381, with five native field-element public inputs.
 # aiken.toml
 [[dependencies]]
 name = "blocksmithy/oakshield-aiken"
-version = "0.2.0"
+version = "0.2.1"
 source = "github"
 ```
 
@@ -107,7 +107,8 @@ use mithril/tip            // module qualifier for read_certified_root
 use mithril/tip.{FromTip}  // the RootSource constructor
 use mithril/tx_inclusion
 
-let root = tip.read_certified_root(self, registry_policy, FromTip)
+// tip_name is your deployment's current-tip NFT asset name — your choice.
+let root = tip.read_certified_root(self, registry_policy, tip_name, FromTip)
 let ok = tx_inclusion.verify_inclusion(proof, journal, vk, params, root, tx_id)
 ```
 

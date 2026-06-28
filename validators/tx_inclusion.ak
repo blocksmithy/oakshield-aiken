@@ -8,14 +8,15 @@
 //// only verify the proof (a BLS pairing) and bind its root to the reference
 //// input. See [mithril/tx_inclusion](../lib/mithril/tx_inclusion.html).
 ////
-//// Parameters: the `oaks_tx` verification key + RISC0 platform parameters,
-//// and the policy id of the tip registry whose reference inputs we trust.
+//// Parameters: the `oaks_tx` verification key + RISC0 platform parameters, the
+//// policy id of the tip registry whose reference inputs we trust, and the asset
+//// name of its current-tip marker NFT (the deployment's choice).
 ////
 //// Aborts on malformed input or a failed binding (bad byte lengths,
 //// off-curve points, a missing tip reference input, a root mismatch); returns
 //// False only on a well-formed but invalid proof.
 
-use cardano/assets.{PolicyId}
+use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 use crypto/groth16.{Proof, VerificationKey}
 use crypto/risc0.{Risc0Params}
@@ -34,6 +35,7 @@ validator tx_inclusion(
   vk: VerificationKey,
   params: Risc0Params,
   registry_policy: PolicyId,
+  tip_name: AssetName,
 ) {
   spend(
     _datum: Option<Data>,
@@ -42,7 +44,7 @@ validator tx_inclusion(
     self: Transaction,
   ) {
     let certified_root =
-      tip.read_certified_root(self, registry_policy, redeemer.source)
+      tip.read_certified_root(self, registry_policy, tip_name, redeemer.source)
     inclusion.verify_inclusion(
       redeemer.proof,
       redeemer.journal,

@@ -13,6 +13,9 @@ use tx_inclusion.{Redeemer}
 const registry_policy: ByteArray =
   #"00000000000000000000000000000000000000000000000000000007"
 
+// Deployment-chosen current-tip NFT name (not a library-enforced constant).
+const tip_name: ByteArray = "mithril_tip"
+
 const ref_tip: OutputReference =
   OutputReference { transaction_id: #"", output_index: 0 }
 
@@ -43,12 +46,13 @@ fn tip_data() -> TipData {
 test tx_inclusion_rejects_root_mismatch() fail {
   let datum = SingletonDatum { current_tip: Some(tip_data()), prev_cert_hash: None }
   let tip_in =
-    testkit.script_input(registry_policy, registry_policy, "singleton", datum, ref_tip)
+    testkit.script_input(registry_policy, registry_policy, tip_name, datum, ref_tip)
   let tx = testkit.tx([], [tip_in], [])
   tx_inclusion.tx_inclusion.spend(
     ceremony.verification_key(),
     ceremony.risc0_params(),
     registry_policy,
+    tip_name,
     None,
     Redeemer {
       proof: ceremony.proof(),
@@ -67,6 +71,7 @@ test tx_inclusion_rejects_missing_tip() fail {
     ceremony.verification_key(),
     ceremony.risc0_params(),
     registry_policy,
+    tip_name,
     None,
     Redeemer {
       proof: ceremony.proof(),

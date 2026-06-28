@@ -6,6 +6,10 @@ use mithril/tip.{FromHistory, FromTip, HistoricalDatum, SingletonDatum, TipData}
 
 const policy: ByteArray = #"00000000000000000000000000000000000000000000000000000001"
 
+// A deployment-chosen current-tip NFT name (NOT a library-enforced "singleton").
+// Using a non-default name here is the regression guard against re-hardcoding.
+const tip_name: ByteArray = "mithril_tip"
+
 const root: ByteArray =
   #"3434343434343434343434343434343434343434343434343434343434343434"
 
@@ -41,9 +45,9 @@ fn a_tip_data() -> TipData {
 test read_root_from_tip() {
   let datum = SingletonDatum { current_tip: Some(a_tip_data()), prev_cert_hash: None }
   let tx =
-    Transaction { ..transaction.placeholder, reference_inputs: [nft_input("singleton", datum)] }
+    Transaction { ..transaction.placeholder, reference_inputs: [nft_input(tip_name, datum)] }
   // Check the root AND a non-root field, so a wrong struct projection is caught.
-  let t = tip.read_tip(tx, policy, FromTip)
+  let t = tip.read_tip(tx, policy, tip_name, FromTip)
   and {
     t.tx_merkle_root == root,
     t.block_number == 100,
@@ -58,7 +62,7 @@ test read_root_from_history() {
       ..transaction.placeholder,
       reference_inputs: [nft_input(a_tip_hash, datum)],
     }
-  tip.read_certified_root(tx, policy, FromHistory { tip_hash: a_tip_hash }) == root
+  tip.read_certified_root(tx, policy, tip_name, FromHistory { tip_hash: a_tip_hash }) == root
 }
 
 // A historical UTxO whose NFT name disagrees with its datum tip_hash is rejected.
@@ -69,39 +73,39 @@ test history_name_must_match_datum() fail {
       ..transaction.placeholder,
       reference_inputs: [nft_input("deadbeef", datum)],
     }
-  tip.read_certified_root(tx, policy, FromHistory { tip_hash: "deadbeef" }) == root
+  tip.read_certified_root(tx, policy, tip_name, FromHistory { tip_hash: "deadbeef" }) == root
 }
 
 // No registry reference input present → fails (uniqueness lookup).
 test tip_missing_ref_input() fail {
-  tip.read_certified_root(transaction.placeholder, policy, FromTip) == root
+  tip.read_certified_root(transaction.placeholder, policy, tip_name, FromTip) == root
 }
 
-// Singleton present but current_tip is None → fails at `expect Some(tip)`.
+// Current-tip NFT present but current_tip is None → fails at `expect Some(tip)`.
 test tip_current_none() fail {
   let datum = SingletonDatum { current_tip: None, prev_cert_hash: None }
   let tx =
-    Transaction { ..transaction.placeholder, reference_inputs: [nft_input("singleton", datum)] }
-  tip.read_certified_root(tx, policy, FromTip) == root
+    Transaction { ..transaction.placeholder, reference_inputs: [nft_input(tip_name, datum)] }
+  tip.read_certified_root(tx, policy, tip_name, FromTip) == root
 }
 
-// Singleton NFT carrying the wrong datum shape → fails at the datum cast.
+// Current-tip NFT carrying the wrong datum shape → fails at the datum cast.
 test tip_wrong_datum_shape() fail {
   let wrong = HistoricalDatum { tip_data: a_tip_data(), prev_cert_hash: None }
   let tx =
-    Transaction { ..transaction.placeholder, reference_inputs: [nft_input("singleton", wrong)] }
-  tip.read_certified_root(tx, policy, FromTip) == root
+    Transaction { ..transaction.placeholder, reference_inputs: [nft_input(tip_name, wrong)] }
+  tip.read_certified_root(tx, policy, tip_name, FromTip) == root
 }
 
-// Two reference inputs both bearing the singleton NFT → ambiguity rejected.
+// Two reference inputs both bearing the current-tip NFT → ambiguity rejected.
 test tip_ambiguous_nft() fail {
   let datum = SingletonDatum { current_tip: Some(a_tip_data()), prev_cert_hash: None }
   let tx =
     Transaction {
       ..transaction.placeholder,
-      reference_inputs: [nft_input("singleton", datum), nft_input("singleton", datum)],
+      reference_inputs: [nft_input(tip_name, datum), nft_input(tip_name, datum)],
     }
-  tip.read_certified_root(tx, policy, FromTip) == root
+  tip.read_certified_root(tx, policy, tip_name, FromTip) == root
 }
 
 // FromHistory with no matching reference input → fails.
@@ -109,6 +113,7 @@ test history_missing_ref_input() fail {
   tip.read_certified_root(
     transaction.placeholder,
     policy,
+    tip_name,
     FromHistory { tip_hash: a_tip_hash },
   ) == root
 }
